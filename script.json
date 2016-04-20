@@ -1,11 +1,14 @@
 {
-    "HI": "Hey there! You've come to the right place to find your next hire. Type the type of role you're searching for (Engineer, Finance, or Product)",
-    "Engineer": "AJ Shah is a great candidate. Let me know if you want to see his experience",
-    "Finance": "Sachin Doshi is a great candidate. Let me know if you want to see his skills",
-    "Product": "Nirav Amin is a great candidate. He is based in Chicago. Let me know if you want to see his work experience",
+    "HI": "Type the role you're searching for (Product, Engineer, Human Resources) and I'll recommend candidates closest to your location",
+    "ENGINEER": "Nirav Amin is a great candidate. Let me know if you want to see his EXPERIENCE",
+    "HUMAN RESOURCES": "Sachin Doshi is a great candidate. Let me know if you want to see his SKILLS",
+    "PRODUCT": "AJ Shah is a great candidate. He is based in Chicago. Let me know if you want to see his WORK history",
+    "EXPERIENCE": "Swift, Node.js, Java, HTML, CSS. Wow, that's a ninja developer!",
+    "SKILLS": "Project management, contract and proposals. Solid HR!",
+    "WORK": "Accenture, Leapfrog, and Akta. Great work history!",
     "TWITTER": "Let's tweet @ Esther so she knows you're setting a bot up. Here's a tweet that's ready to go: http://bit.ly/estherbot-tweet",
     "I LOVE YOU": "Awh, shucks! I love you too!",
     "CONNECT ME": "",
     "MY NAME IS": "Slim Shady!",
-    "DISCONNECT": "Roger that, EstherBot is back."
+    "DISCONNECT": "Roger that, Just Testing is back."
 }
