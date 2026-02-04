@@ -11,7 +11,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ const navItems = [
   { href: '/dashboard', label: 'My List', icon: List },
   { href: '/dashboard/compare', label: 'Compare', icon: BarChart3 },
   { href: '/dashboard/optimize', label: 'Optimize', icon: ShoppingBag },
+  { href: '/dashboard/automation', label: 'Automation', icon: Zap },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
