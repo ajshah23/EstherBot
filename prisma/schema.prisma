@@ -1,0 +1,256 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User & Authentication
+// ============================================================================
+
+model User {
+  id                   String                @id @default(uuid())
+  email                String                @unique
+  passwordHash         String
+  name                 String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  platforms            UserPlatform[]
+  credentials          PlatformCredential[]
+  items                GroceryItem[]
+  productMappings      ProductMapping[]
+  scrapingJobs         ScrapingJob[]
+  orders               Order[]
+  notificationSettings NotificationSettings?
+  notifications        UserNotification[]
+}
+
+// ============================================================================
+// Platform Configuration
+// ============================================================================
+
+model UserPlatform {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform        String   // 'amazon', 'doordash', 'instacart', 'walmart'
+  isActive        Boolean  @default(true)
+  deliveryMinimum Decimal? @db.Decimal(10, 2)
+  storeId         String?
+  storeName       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, platform])
+  @@index([userId])
+}
+
+model PlatformCredential {
+  id                   String    @id @default(uuid())
+  userId               String
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform             String
+  encryptedUsername    String
+  encryptedPassword    String
+  encryptionIv         String
+  authTag              String
+  encryptedSessionData String?
+  isActive             Boolean   @default(true)
+  lastValidated        DateTime?
+  validationStatus     String?   // 'valid', 'invalid', 'expired', 'pending'
+  lastUsed             DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@unique([userId, platform])
+  @@index([userId])
+}
+
+// ============================================================================
+// Grocery Items
+// ============================================================================
+
+model GroceryItem {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  quantity        Decimal          @default(1) @db.Decimal(10, 2)
+  unit            String?
+  category        String?          // 'Produce', 'Dairy', 'Meat', 'Pantry', 'Snacks', 'Beverages', etc.
+  notes           String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  productMappings ProductMapping[]
+  priceSnapshots  PriceSnapshot[]
+  priceHistory    PriceHistory[]
+  orderItems      OrderItem[]
+  notifications   UserNotification[]
+
+  @@index([userId])
+  @@index([userId, isActive])
+}
+
+// ============================================================================
+// Product Matching
+// ============================================================================
+
+model ProductMapping {
+  id                  String          @id @default(uuid())
+  userId              String
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId              String
+  item                GroceryItem     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  platform            String
+  platformProductId   String?
+  platformProductName String?
+  platformProductUrl  String?
+  platformImageUrl    String?
+  brandName           String?
+  size                String?
+  matchConfidence     Decimal?        @db.Decimal(3, 2)
+  userConfirmed       Boolean         @default(false)
+  lastVerified        DateTime?
+  needsRematch        Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  priceSnapshots      PriceSnapshot[]
+
+  @@unique([itemId, platform])
+  @@index([userId])
+  @@index([itemId])
+}
+
+// ============================================================================
+// Price Data
+// ============================================================================
+
+model PriceSnapshot {
+  id               String          @id @default(uuid())
+  itemId           String
+  item             GroceryItem     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  productMappingId String?
+  productMapping   ProductMapping? @relation(fields: [productMappingId], references: [id], onDelete: SetNull)
+  platform         String
+  price            Decimal?        @db.Decimal(10, 2)
+  isAvailable      Boolean         @default(true)
+  source           String?         // 'automated', 'manual', 'api'
+  lastUpdated      DateTime        @default(now())
+
+  @@index([itemId, platform])
+  @@index([lastUpdated])
+}
+
+model PriceHistory {
+  id         String      @id @default(uuid())
+  itemId     String
+  item       GroceryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  platform   String
+  price      Decimal     @db.Decimal(10, 2)
+  recordedAt DateTime    @default(now())
+
+  @@index([itemId, platform, recordedAt])
+}
+
+// ============================================================================
+// Scraping & Automation
+// ============================================================================
+
+model ScrapingJob {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform       String
+  status         String?   // 'pending', 'running', 'completed', 'failed'
+  itemsProcessed Int       @default(0)
+  itemsTotal     Int?
+  errorMessage   String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([userId, status])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// Orders
+// ============================================================================
+
+model Order {
+  id               String      @id @default(uuid())
+  userId           String
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderDate        DateTime    @default(now())
+  totalCost        Decimal?    @db.Decimal(10, 2)
+  estimatedSavings Decimal?    @db.Decimal(10, 2)
+  createdAt        DateTime    @default(now())
+  carts            OrderCart[]
+
+  @@index([userId])
+}
+
+model OrderCart {
+  id          String      @id @default(uuid())
+  orderId     String
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  platform    String
+  subtotal    Decimal?    @db.Decimal(10, 2)
+  isCompleted Boolean     @default(false)
+  completedAt DateTime?
+  items       OrderItem[]
+
+  @@index([orderId])
+}
+
+model OrderItem {
+  id          String       @id @default(uuid())
+  orderCartId String
+  orderCart   OrderCart    @relation(fields: [orderCartId], references: [id], onDelete: Cascade)
+  itemId      String?
+  item        GroceryItem? @relation(fields: [itemId], references: [id])
+  quantity    Decimal      @db.Decimal(10, 2)
+  price       Decimal      @db.Decimal(10, 2)
+  createdAt   DateTime     @default(now())
+
+  @@index([orderCartId])
+}
+
+// ============================================================================
+// Notifications
+// ============================================================================
+
+model NotificationSettings {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  priceDropAlerts    Boolean  @default(true)
+  priceDropThreshold Decimal  @default(0.20) @db.Decimal(5, 2)
+  authErrorAlerts    Boolean  @default(true)
+  dailySummary       Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model UserNotification {
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String       // 'price_drop', 'auth_error', 'product_unavailable'
+  title           String
+  message         String
+  isRead          Boolean      @default(false)
+  relatedItemId   String?
+  relatedItem     GroceryItem? @relation(fields: [relatedItemId], references: [id], onDelete: SetNull)
+  relatedPlatform String?
+  createdAt       DateTime     @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
